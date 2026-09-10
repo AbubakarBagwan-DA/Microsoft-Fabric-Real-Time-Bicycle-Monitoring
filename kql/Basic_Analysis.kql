@@ -1,0 +1,34 @@
+// Count the number of bicycle events recorded for each street.
+BicycleEvents
+| summarize EventCount = count() by Street
+
+
+// Select relevant bicycle event columns for inspection.
+BicycleEvents
+| project BikepointID, Street, Neighbourhood, No_Bikes, No_Empty_Docks
+| take 20
+
+
+// Classify bicycle availability based on the number of available bicycles.
+BicycleEvents
+| extend AvailabilityStatus = case(
+    No_Bikes < 5, "Critical",
+    No_Bikes < 15, "Low",
+    No_Bikes < 25, "Normal",
+    "High"
+)
+| project BikepointID, Street, No_Bikes, AvailabilityStatus
+| take 20
+
+
+// Show the number of events in each bicycle availability category.
+BicycleEvents
+| extend Category = case(
+    No_Bikes < 5, "Critical",
+    No_Bikes < 15, "Low",
+    No_Bikes < 25, "Normal",
+    "High"
+)
+| summarize Bikes_Avail = count() by Category
+| order by Bikes_Avail desc
+| render piechart

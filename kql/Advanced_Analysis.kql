@@ -1,0 +1,60 @@
+// Calculate overall bicycle availability statistics across all events.
+BicycleEvents
+| summarize
+    Total_Events = count(),
+    UniqueBikes = dcount(BikepointID),
+    Average_Bikes = round(avg(No_Bikes), 2),
+    Min_Bikes = min(No_Bikes),
+    Max_Bikes = max(No_Bikes)
+
+
+// Identify the 20 bicycle stations with the highest number of critical-availability events and classify their severity.
+
+let CriticalDetails = BicycleEvents
+| where No_Bikes < 5;
+
+CriticalDetails
+| summarize
+    Total_CritEvents = count(),
+    Average_Bikes = round(avg(No_Bikes), 2),
+    Min_Bikes_Avail = min(No_Bikes)
+    by BikepointID, Street
+| extend Category = case(
+    Total_CritEvents > 10000, "Very High",
+    Total_CritEvents > 5000, "High",
+    "Moderate"
+)
+| top 20 by Total_CritEvents desc
+
+
+// Analyze each street's bicycle availability, classify its overall condition, rank the streets, and visualize the result.
+
+BicycleEvents
+| take 20
+| summarize
+    Total_Events = count(),
+    Avg_Bikes = round(avg(No_Bikes), 2),
+    Min_Bikes = min(No_Bikes),
+    Max_Bikes = max(No_Bikes)
+    by Street
+| extend Category = case(
+    Avg_Bikes < 5, "Critical",
+    Avg_Bikes < 15, "Low",
+    Avg_Bikes < 25, "Normal",
+    "High"
+)
+| top 10 by Avg_Bikes asc
+| render columnchart
+
+
+// Identify streets with the largest variation in bicycle availability.
+BicycleEvents
+| summarize total_count = count(),
+    average_bikes =round(avg(No_Bikes),2),
+    min_bikes =min(No_Bikes),
+    max_bikes =max(No_Bikes)
+    by Street 
+//|where min_bikes  == 0 and max_bikes >= 25
+|extend  range = max_bikes - min_bikes
+|take 20
+|order by range desc

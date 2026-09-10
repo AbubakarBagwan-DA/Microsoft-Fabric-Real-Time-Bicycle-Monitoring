@@ -1,0 +1,44 @@
+// Identify the top 20 streets with the highest number of critical bicycle shortage events.
+BicycleEvents
+| where No_Bikes < 5
+| summarize Crit_Events = count() by Street
+| order by Crit_Events desc
+| take 20
+
+
+// Identify the top 5 streets with critical bicycle availability events and visualize the result.
+BicycleEvents
+| where No_Bikes < 5
+| summarize Alert = count() by Street
+| top 5 by Alert desc
+| render piechart
+
+
+// Monitor bicycle stations with critical availability events.
+// Shows critical-event count, average bicycles available, and minimum bicycles available.
+BicycleEvents
+| where No_Bikes < 5
+| summarize
+    Total_Crit_Events = count(),
+    Avg_Bikes = round(avg(No_Bikes), 2),
+    Min_Bikes_available = min(No_Bikes)
+    by BikepointID, Street
+| top 20 by Total_Crit_Events desc
+| order by Min_Bikes_available asc, substring(BikepointID, -3, 3) desc
+
+
+// The operations team wants to identify streets with frequent bicycle shortages.
+BicycleEvents
+| where No_Bikes < 5
+| summarize
+    CriticalEvents = count(),
+    Avg_Critical_Bikes = round(avg(No_Bikes), 2),
+    Min_Bikes = min(No_Bikes)
+    by Street
+| extend Category = case(
+    CriticalEvents > 10000, "High",
+    CriticalEvents > 5000, "Medium",
+    "Low"
+)
+| top 10 by CriticalEvents desc
+| render columnchart

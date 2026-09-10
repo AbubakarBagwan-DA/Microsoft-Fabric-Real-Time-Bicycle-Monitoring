@@ -1,0 +1,30 @@
+// Combine records from BicycleEvents and MyFilteredTable using UNION.
+union BicycleEvents, MyFilteredTable
+| take 20
+
+// Join matching bicycle event records from BicycleEvents and MyFilteredTable using BikepointID.
+BicycleEvents
+| take 100
+| join kind=inner (
+MyFilteredTable
+| take 100
+) on BikepointID
+| project BikepointID, BikepointID1, Street, Street1, No_Bikes, No_Bikes1
+| top 20 by No_Bikes desc
+
+// Enrich BicycleEvents with matching records from MyFilteredTable using LOOKUP.
+BicycleEvents
+| take 100
+| lookup kind=leftouter (
+MyFilteredTable
+| take 100
+) on BikepointID
+| top 20 by BikepointID desc
+
+// Count and rank critical bicycle shortage events by street.
+BicycleEvents
+| where No_Bikes < 5
+| summarize CriticalEvents = count() by Street
+| order by CriticalEvents desc
+
+
